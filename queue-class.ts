@@ -17,7 +17,7 @@ interface SongInterface {
     thumbnail: string;
     totalLength: string;
     elapsed: number;
-    caller: GuildMember | null;
+    caller: string | null;
     state: SongState;
 }
 
@@ -26,7 +26,7 @@ export class Song implements SongInterface {
     public url: string;
     public thumbnail: string;
     public totalLength: string;
-    public caller: GuildMember | null;
+    public caller: string | null;
     public state: SongState;
     public elapsed: number;
 

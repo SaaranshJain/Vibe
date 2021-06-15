@@ -82,7 +82,7 @@ export default (queues: Collection<string, Queue>) =>
 
             queue.addSong(
                 new Song({
-                    caller: msg.member,
+                    caller: msg.member.id,
                     elapsed: 0,
                     name: data.title,
                     state: 'queued',

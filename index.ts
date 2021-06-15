@@ -9,6 +9,9 @@ import PreviousCommand from './commands/music/previous.js';
 import PauseCommand from './commands/music/pause.js';
 import ResumeCommand from './commands/music/resume.js';
 import RemoveCommand from './commands/music/remove.js';
+import ExitCommand from './commands/music/exit.js';
+import SaveCommand from './commands/music/save.js';
+import LoadCommand from './commands/music/load.js';
 
 import { Queue } from './queue-class.js';
 
@@ -44,6 +47,9 @@ client.registry
         PauseCommand(queues),
         ResumeCommand(queues),
         RemoveCommand(queues),
+        ExitCommand(queues),
+        SaveCommand(queues),
+        LoadCommand(queues),
     ]);
 
 client.login(TOKEN).catch(err => console.log(err));

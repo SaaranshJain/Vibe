@@ -1,7 +1,7 @@
 import * as Commando from 'discord.js-commando';
 import 'discord-reply';
 import { Queue } from '../../queue-class.js';
-import { MessageEmbed, Collection } from 'discord.js';
+import { Collection } from 'discord.js';
 
 export default (queues: Collection<string, Queue>) =>
     class ExitCommand extends Commando.Command {
