@@ -3,3 +3,4 @@ build
 .replit
 node_modules
 .env
+.upm

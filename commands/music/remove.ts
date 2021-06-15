@@ -35,6 +35,7 @@ export default (queues: Collection<string, Queue>) =>
             if (name === 'all') {
                 queue.items = [];
                 queue.dispatcher.destroy();
+                queue.channel.disconnect();
                 return msg.lineReply('Cleared queue!');
             }
 
