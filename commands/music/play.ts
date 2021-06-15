@@ -62,6 +62,11 @@ export default (queues: Collection<string, Queue>) =>
                 }
 
                 queue.channel = chan;
+                
+                queue.channel.on("disconnect", () => {
+                    queues.delete(msg.guild?.id);
+                });
+
                 queue.msgChannel = msg.channel;
             }
 
