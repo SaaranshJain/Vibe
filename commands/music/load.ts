@@ -2,7 +2,7 @@ import * as Commando from 'discord.js-commando';
 import 'discord-reply';
 import { Queue } from '../../queue-class.js';
 import { Collection } from 'discord.js';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 
 export default (queues: Collection<string, Queue>) =>
     class LoadCommand extends Commando.Command {
@@ -25,30 +25,27 @@ export default (queues: Collection<string, Queue>) =>
             const queue =
                 queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
 
-            fs.readFile('./saved-queues.json', { encoding: 'utf-8' }, (err, data: string) => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    const existingQueues = JSON.parse(data);
+            try {
+                const data = await fs.readFile('./saved-queues.json', { encoding: 'utf-8' });
+                const existingQueues = JSON.parse(data);
 
-                    if (!existingQueues[msg.author.id] || !existingQueues[msg.author.id][msg.guild.id]) {
-                        msg.lineReply('You have no saved queues for this server lol save something first');
-                    } else {
-                        queue.items = existingQueues[msg.author.id][msg.guild.id];
-                        queue.msgChannel = msg.channel;
-
-                        msg.member?.voice.channel?.join().then(chan => {
-                            if (!chan) {
-                                msg.lineReply("Couldn't connect to voice channel ono");
-                            } else {
-                                queue.channel = chan;
-                                queue.recalcQueue();
-                                msg.lineReply('Loaded saved queue!');
-                            }
-                        });
-                    }
+                if (!existingQueues[msg.author.id] || !existingQueues[msg.author.id][msg.guild.id]) {
+                    return msg.lineReply('You have no saved queues for this server lol save something first');
                 }
-            });
+
+                queue.items = existingQueues[msg.author.id][msg.guild.id];
+                queue.channel = await msg.member.voice.channel.join();
+                
+                queue.channel.on("disconnect", () => {
+                    queues.delete(msg.guild?.id);
+                });
+
+                queue.msgChannel = msg.channel;
+                
+                return msg.lineReply('Loaded saved queue!');
+            } catch (err) {
+                console.log(err);
+            }
 
             return null;
         }

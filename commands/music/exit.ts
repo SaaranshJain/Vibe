@@ -24,6 +24,10 @@ export default (queues: Collection<string, Queue>) =>
             const queue =
                 queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
 
+            if (!queue.channel) {
+                return msg.lineReply('Not connected bruh');
+            }
+
             queue.channel.disconnect();
             return null;
         }

@@ -24,10 +24,14 @@ export default (queues: Collection<string, Queue>) =>
             const queue =
                 queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
 
+            if (queue.items.length <= 0) {
+                return msg.lineReply('Queue is empty tho');
+            }
+
             const nextDeets = queue.next();
 
             if (nextDeets) {
-                return msg.channel.send(new MessageEmbed(nextDeets))
+                return msg.channel.send(new MessageEmbed(nextDeets));
             }
 
             await msg.channel.send('Queue is now complete');

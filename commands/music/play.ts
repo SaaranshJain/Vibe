@@ -55,13 +55,7 @@ export default (queues: Collection<string, Queue>) =>
             }
 
             if (queue.items.length <= 0) {
-                const chan = await msg.member?.voice.channel?.join();
-
-                if (!chan) {
-                    return msg.lineReply("Couldn't connect to voice channel ono");
-                }
-
-                queue.channel = chan;
+                queue.channel = await msg.member.voice.channel.join();
                 
                 queue.channel.on("disconnect", () => {
                     queues.delete(msg.guild?.id);

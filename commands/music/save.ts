@@ -25,6 +25,16 @@ export default (queues: Collection<string, Queue>) =>
             const queue =
                 queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
 
+            if (queue.items.length <= 0) {
+                queue.channel = await msg.member.voice.channel.join();
+
+                queue.channel.on('disconnect', () => {
+                    queues.delete(msg.guild?.id);
+                });
+
+                queue.msgChannel = msg.channel;
+            }
+
             fs.readFile('./saved-queues.json', { encoding: 'utf-8' }, (err, data: string) => {
                 if (err) {
                     console.log(err);
@@ -48,6 +58,6 @@ export default (queues: Collection<string, Queue>) =>
                 }
             });
 
-            return msg.lineReply("Saved queue!");
+            return msg.lineReply('Saved queue!');
         }
     };

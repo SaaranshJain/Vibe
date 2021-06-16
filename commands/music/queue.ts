@@ -31,18 +31,36 @@ export default (queues: Collection<string, Queue>) =>
             const queue =
                 queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
 
+            if (queue.items.length <= 0) {
+                queue.channel = await msg.member.voice.channel.join();
+
+                queue.channel.on('disconnect', () => {
+                    queues.delete(msg.guild?.id);
+                });
+
+                queue.msgChannel = msg.channel;
+            }
+
             if (queue.items.length === 0) {
                 return msg.lineReply('Queue is empty');
             }
 
             return msg.lineReply(
                 '```diff' +
-                '\n' +
-                `${queue.items.reduce(
-                    (a, v) => a + (v.state === 'playing' ? '+ ' : '  ') + v.name + '\n' + (v.state === 'playing' ? '+ ' : '  ') + '\t' + (v.state === "playing" ? milliToStr(queue.dispatcher.streamTime) + ' / ' : '') + `${v.totalLength}\n`,
-                    ''
-                )}` +
-                '```'
+                    '\n' +
+                    `${queue.items.reduce(
+                        (a, v) =>
+                            a +
+                            (v.state === 'playing' ? '+ ' : '  ') +
+                            v.name +
+                            '\n' +
+                            (v.state === 'playing' ? '+ ' : '  ') +
+                            '\t' +
+                            (v.state === 'playing' ? milliToStr(queue.dispatcher.streamTime) + ' / ' : '') +
+                            `${v.totalLength}\n`,
+                        ''
+                    )}` +
+                    '```'
             );
         }
     };

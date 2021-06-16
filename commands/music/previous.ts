@@ -8,7 +8,7 @@ export default (queues: Collection<string, Queue>) =>
         constructor(client: Commando.CommandoClient) {
             super(client, {
                 name: 'previous',
-                aliases: ['prev', 'before'],
+                aliases: ['pre', 'before'],
                 group: 'music',
                 memberName: 'previous',
                 description: 'Goes back to the previous song.',
@@ -23,6 +23,16 @@ export default (queues: Collection<string, Queue>) =>
 
             const queue =
                 queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
+
+            if (queue.items.length <= 0) {
+                queue.channel = await msg.member.voice.channel.join();
+
+                queue.channel.on('disconnect', () => {
+                    queues.delete(msg.guild?.id);
+                });
+
+                queue.msgChannel = msg.channel;
+            }
 
             return msg.channel.send(new MessageEmbed(queue.prev()));
         }
