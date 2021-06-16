@@ -24,9 +24,9 @@ export default (queues: Collection<string, Queue>) =>
             const queue =
                 queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
 
-            queue.dispatcher.resume();
-            queue.dispatcher.pause();
-            queue.dispatcher.resume();
+            queue.dispatcher?.resume();
+            queue.dispatcher?.pause();
+            queue.dispatcher?.resume();
             
             return null;
         }
