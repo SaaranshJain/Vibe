@@ -50,6 +50,8 @@ export default (queues: Collection<string, Queue>) =>
                 thumbnail: `${res.data.match(thumbnailSearchPattern)?.[1]}`,
             };
 
+            data.thumbnail = data.thumbnail.startsWith("//") ? "https:" + data.thumbnail : data.thumbnail;
+
             if (!data.url || !data.title || !data.length || !data.thumbnail || data.title === 'No results found') {
                 return msg.lineReply("What are you searching smh I couldn't even find it");
             }

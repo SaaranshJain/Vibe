@@ -33,6 +33,8 @@ export default (queues: Collection<string, Queue>) =>
                 });
 
                 queue.msgChannel = msg.channel;
+
+                return msg.lineReply("Saving empty q??????");
             }
 
             fs.readFile('./saved-queues.json', { encoding: 'utf-8' }, (err, data: string) => {

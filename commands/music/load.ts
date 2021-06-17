@@ -36,11 +36,13 @@ export default (queues: Collection<string, Queue>) =>
                 queue.items = existingQueues[msg.author.id][msg.guild.id];
                 queue.channel = await msg.member.voice.channel.join();
                 
+                
                 queue.channel.on("disconnect", () => {
                     queues.delete(msg.guild?.id);
                 });
 
                 queue.msgChannel = msg.channel;
+                queue.recalcQueue();
                 
                 return msg.lineReply('Loaded saved queue!');
             } catch (err) {

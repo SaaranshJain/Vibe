@@ -34,6 +34,12 @@ export default (queues: Collection<string, Queue>) =>
                 queue.msgChannel = msg.channel;
             }
 
-            return msg.channel.send(new MessageEmbed(queue.prev()));
+            const prevDeets = queue.prev();
+
+            if (prevDeets) {
+                return msg.channel.send(new MessageEmbed(queue.prev()));
+            }
+
+            return null;
         }
     };

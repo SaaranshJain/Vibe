@@ -76,7 +76,7 @@ export class Queue implements QueueInterface {
         this.items = []
     }
 
-    recalcQueue() {
+    recalcQueue(time?: number) {
         if (this.items.length === 0) return;
 
         let indOfPlaying = this.items.findIndex(val => val.state === 'playing');
@@ -92,7 +92,7 @@ export class Queue implements QueueInterface {
         }
 
         ytdl(this.items[indOfPlaying].url, { quality: 'highestaudio' })
-            .then(val => this.channel.play(val, { type: 'opus' }))
+            .then(val => this.channel.play(val, { type: 'opus', seek: time }))
             .then(dispatcher => {
                 this.dispatcher = dispatcher;
                 this.dispatcher.on('finish', () => {
@@ -145,6 +145,10 @@ export class Queue implements QueueInterface {
     }
 
     next() {
+        if (this.items.length <= 0) {
+            return;
+        }
+
         const indOfPlaying = this.items.findIndex(val => val.state === 'playing');
         const indOfQueued = this.items.findIndex(val => val.state === 'queued');
         const playing = this.items[indOfPlaying];
@@ -170,6 +174,10 @@ export class Queue implements QueueInterface {
     }
 
     prev() {
+        if (this.items.length <= 0) {
+            return;
+        }
+        
         const indOfPlaying = this.items.findIndex(val => val.state === 'playing');
         const indOfPlayed = this.items.findIndex(val => val.state === 'played');
         const playing = this.items[indOfPlaying];
@@ -178,7 +186,7 @@ export class Queue implements QueueInterface {
         playing ? playing.state = 'queued' : null;
         playedLast ? playedLast.state = 'playing' : null;
 
-        this.dispatcher.destroy();
+        this.dispatcher?.destroy();
         this.recalcQueue();
 
         return {

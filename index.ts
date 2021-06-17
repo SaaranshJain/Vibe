@@ -12,6 +12,7 @@ import RemoveCommand from './commands/music/remove.js';
 import ExitCommand from './commands/music/exit.js';
 import SaveCommand from './commands/music/save.js';
 import LoadCommand from './commands/music/load.js';
+import SeekCommand from "./commands/music/seek.js";
 
 import { Queue } from './queue-class.js';
 
@@ -50,6 +51,7 @@ client.registry
         ExitCommand(queues),
         SaveCommand(queues),
         LoadCommand(queues),
+        SeekCommand(queues)
     ]);
 
 client.login(TOKEN).catch(err => console.log(err));
