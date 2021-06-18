@@ -1,12 +1,13 @@
 import {
     DMChannel,
-    GuildMember,
     MessageEmbed,
     NewsChannel,
     StreamDispatcher,
     TextChannel,
     VoiceConnection,
+    Collection,
 } from 'discord.js';
+
 import * as ytdl from 'ytdl-core-discord';
 
 type SongState = 'queued' | 'playing' | 'paused' | 'played';
@@ -39,24 +40,6 @@ export class Song implements SongInterface {
         this.state = props.state ?? 'queued';
         this.elapsed = props.elapsed ?? 0;
     }
-
-    getLengthInMillis() {
-        const timeData = this.totalLength.split(':');
-        let millis = 0;
-
-        if (timeData.length === 1) {
-            millis = parseInt(timeData[0]) * 1000;
-        } else if (timeData.length === 2) {
-            millis = parseInt(timeData[0]) * 60 * 1000 + parseInt(timeData[1]) * 1000;
-        } else if (timeData.length === 3) {
-            millis =
-                parseInt(timeData[2]) * 60 * 60 * 1000 +
-                parseInt(timeData[1]) * 60 * 1000 +
-                parseInt(timeData[0]) * 1000;
-        }
-
-        return millis;
-    }
 }
 
 interface QueueInterface {
@@ -73,127 +56,85 @@ export class Queue implements QueueInterface {
     public msgChannel!: TextChannel | DMChannel | NewsChannel;
 
     constructor() {
-        this.items = []
+        this.items = [];
     }
 
-    recalcQueue(time?: number) {
+    async recalcQueue(time?: number) {
         if (this.items.length === 0) return;
 
-        let indOfPlaying = this.items.findIndex(val => val.state === 'playing');
         const firstIndOfQueued = this.items.findIndex(val => val.state === 'queued');
+
+        let indOfPlaying = this.items.findIndex(val => val.state === 'playing');
+        let playing = this.items[indOfPlaying];
 
         if (indOfPlaying === -1) {
             if (firstIndOfQueued === -1) {
+                await this.msgChannel.send('Queue is now complete');
+                this.channel.disconnect();
                 return;
             }
 
             indOfPlaying = firstIndOfQueued;
-            this.items[indOfPlaying].state = 'playing';
+            playing = this.items[firstIndOfQueued];
+            playing.state = 'playing';
         }
 
-        ytdl(this.items[indOfPlaying].url, { quality: 'highestaudio' })
-            .then(val => this.channel.play(val, { type: 'opus', seek: time }))
-            .then(dispatcher => {
-                this.dispatcher = dispatcher;
-                this.dispatcher.on('finish', () => {
-                    this.items[indOfPlaying].state = 'played';
-
-                    if (indOfPlaying !== this.items.length - 1) {
-                        this.items[indOfPlaying + 1].state = 'playing';
-                        this.msgChannel.send(
-                            new MessageEmbed({
-                                title: this.items[indOfPlaying + 1].name,
-                                image: { url: this.items[indOfPlaying + 1].thumbnail },
-                                description: 'Now playing',
-                                url: this.items[indOfPlaying + 1].url,
-                            })
-                        );
-                        this.recalcQueue();
-                    } else {
-                        this.msgChannel.send('Queue is now complete');
-                        this.channel.disconnect();
-                    }
-                });
-                this.dispatcher.on('error', err => console.log({ err }));
-                this.dispatcher.on('debug', info => console.log({ info }));
-            });
-
-        for (let i = 0; i < indOfPlaying; i++) {
-            this.items[i].state = 'played';
+        for (const song of this.items.slice(0, indOfPlaying)) {
+            song.state = 'played';
         }
 
-        for (let i = indOfPlaying + 1; i < this.items.length; i++) {
-            this.items[i].state = 'queued';
+        for (const song of this.items.slice(indOfPlaying + 1)) {
+            song.state = 'queued';
         }
+
+        const stream = await ytdl(playing.url, { quality: 'highestaudio' });
+        this.dispatcher = this.channel.play(stream, { type: 'opus', seek: time });
+
+        await this.msgChannel.send(
+            new MessageEmbed({
+                title: playing.name,
+                image: { url: playing.thumbnail },
+                description: 'Now playing',
+                url: playing.url,
+            })
+        );
+
+        this.dispatcher.on('finish', () => {
+            playing.state = 'played';
+            this.recalcQueue();
+        });
+
+        this.dispatcher.on('error', console.log);
+        this.dispatcher.on('debug', console.log);
     }
 
-    addSong(toAdd: Song) {
+    async addSong(toAdd: Song) {
         this.items.push(new Song({ ...toAdd }));
 
         if (!this.items.find(item => item.state === 'playing')) {
-            this.recalcQueue();
+            await this.recalcQueue();
         }
     }
 
-    remove(toRemove: Song) {
+    async remove(toRemove: Song) {
         this.items = this.items.filter(item => item.url !== toRemove.url);
 
         if (toRemove.state === 'playing') {
             this.dispatcher.destroy();
-            this.recalcQueue();
+            await this.recalcQueue();
         }
-    }
-
-    next() {
-        if (this.items.length <= 0) {
-            return;
-        }
-
-        const indOfPlaying = this.items.findIndex(val => val.state === 'playing');
-        const indOfQueued = this.items.findIndex(val => val.state === 'queued');
-        const playing = this.items[indOfPlaying];
-        const queuedFirst = this.items[indOfQueued];
-        let toReturn;
-
-        playing.state = 'played';
-        this.dispatcher.destroy();
-
-        if (indOfPlaying !== this.items.length - 1) {
-            queuedFirst.state = 'playing';
-            toReturn = {
-                title: queuedFirst.name,
-                image: { url: queuedFirst.thumbnail },
-                description: 'Now playing',
-                url: queuedFirst.url,
-            };
-        }
-
-        this.recalcQueue();
-
-        return toReturn;
-    }
-
-    prev() {
-        if (this.items.length <= 0) {
-            return;
-        }
-        
-        const indOfPlaying = this.items.findIndex(val => val.state === 'playing');
-        const indOfPlayed = this.items.findIndex(val => val.state === 'played');
-        const playing = this.items[indOfPlaying];
-        const playedLast = this.items[indOfPlayed];
-
-        playing ? playing.state = 'queued' : null;
-        playedLast ? playedLast.state = 'playing' : null;
-
-        this.dispatcher?.destroy();
-        this.recalcQueue();
-
-        return {
-            title: playedLast.name,
-            image: { url: playedLast.thumbnail },
-            description: 'Now playing',
-            url: playedLast.url,
-        };
     }
 }
+
+export const queues = new Collection<string, Queue>();
+
+export const getQ = (key: string) => {
+    const existingQ = queues.get(key);
+    if (existingQ) {
+        return existingQ;
+    }
+
+    const newQ = new Queue();
+    queues.set(key, newQ);
+    return newQ;
+};

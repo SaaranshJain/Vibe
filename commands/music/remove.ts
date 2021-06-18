@@ -1,86 +1,61 @@
 import * as Commando from 'discord.js-commando';
 import 'discord-reply';
-import { Queue } from '../../queue-class.js';
-import { Collection, MessageEmbed } from 'discord.js';
+import { MessageEmbed } from 'discord.js';
+import { getQ, queues } from '../../queue-class.js';
 
-export default (queues: Collection<string, Queue>) =>
-    class RemoveCommand extends Commando.Command {
-        constructor(client: Commando.CommandoClient) {
-            super(client, {
-                name: 'remove',
-                aliases: ['rm', 'kicc'],
-                group: 'music',
-                memberName: 'remove',
-                description: 'Removes the specified song',
-                examples: ['remove Never gonna give you up'],
-                args: [
-                    {
-                        key: 'name',
-                        label: 'name',
-                        prompt: 'Please provide the name of the song you would like to remove',
-                        type: 'string',
-                    },
-                ],
-            });
+export default class RemoveCommand extends Commando.Command {
+    constructor(client: Commando.CommandoClient) {
+        super(client, {
+            name: 'remove',
+            aliases: ['rm', 'kicc'],
+            group: 'music',
+            memberName: 'remove',
+            description: 'Removes the specified song',
+            examples: ['remove Never gonna give you up'],
+            args: [
+                {
+                    key: 'name',
+                    label: 'name',
+                    prompt: 'Please provide the name of the song you would like to remove',
+                    type: 'string',
+                },
+            ],
+        });
+    }
+
+    async run(msg: Message, { name }: { name: string }) {
+        if (!msg.member?.voice.channel) {
+            return msg.lineReply('You need to be in a voice channel lmao');
         }
 
-        async run(msg: Message, { name }: { name: string }) {
-            if (!msg.member?.voice.channel) {
-                return msg.lineReply('You need to be in a voice channel lmao');
-            }
+        const queue = getQ(msg.guild.id);
 
-            const queue =
-                queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
-
-            if (queue.items.length <= 0) {
-                queue.channel = await msg.member.voice.channel.join();
-
-                queue.channel.on('disconnect', () => {
-                    queues.delete(msg.guild?.id);
-                });
-
-                queue.msgChannel = msg.channel;
-            }
-
-            if (name === 'all') {
-                queue.items = [];
-                queue.dispatcher.destroy();
-                queue.channel.disconnect();
-                return msg.lineReply('Cleared queue!');
-            }
-
-            outer: for (const corpusItem of queue.items) {
-                let currIndex = corpusItem.name.toLowerCase().indexOf(name.toLowerCase()[0]);
-
-                if (currIndex === -1) {
-                    continue;
-                }
-
-                for (let i = 1; i < name.toLowerCase().length; i++) {
-                    let nextIndex = corpusItem.name
-                        .toLowerCase()
-                        .slice(currIndex + 1)
-                        .indexOf(name.toLowerCase()[i]);
-
-                    if (nextIndex === -1) {
-                        continue outer;
-                    } else {
-                        currIndex += nextIndex + 1;
-                    }
-                }
-
-                queue.remove(corpusItem);
-
-                return msg.channel.send(
-                    new MessageEmbed({
-                        title: corpusItem.name,
-                        description: 'Removed from queue',
-                        thumbnail: { url: corpusItem.thumbnail },
-                        url: corpusItem.url,
-                    })
-                );
-            }
-
-            return msg.lineReply('Song not found');
+        if (queue.items.length <= 0) {
+            return msg.lineReply('Queue is empty whatchu tryna remove?');
         }
-    };
+
+        if (name === 'all') {
+            queue.items = [];
+            queue.dispatcher.destroy();
+            queue.channel.disconnect();
+            queues.delete(msg.guild.id);
+            return msg.lineReply('Cleared queue!');
+        }
+
+        const toRemove = queue.items.find(val => val.name.toLowerCase().includes(name.toLowerCase()));
+
+        if (toRemove) {
+            queue.remove(toRemove);
+            return msg.channel.send(
+                new MessageEmbed({
+                    title: toRemove.name,
+                    description: 'Removed from queue',
+                    thumbnail: { url: toRemove.thumbnail },
+                    url: toRemove.url,
+                })
+            );
+        }
+
+        return msg.lineReply('Could not find song');
+    }
+}

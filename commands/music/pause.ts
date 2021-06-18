@@ -1,40 +1,35 @@
 import * as Commando from 'discord.js-commando';
 import 'discord-reply';
-import { Queue } from '../../queue-class.js';
-import { Collection } from 'discord.js';
+import { getQ } from '../../queue-class.js';
 
-export default (queues: Collection<string, Queue>) =>
-    class PauseCommand extends Commando.Command {
-        constructor(client: Commando.CommandoClient) {
-            super(client, {
-                name: 'pause',
-                aliases: ['pa', 'stop'],
-                group: 'music',
-                memberName: 'pause',
-                description: 'Pauses the current song',
-                examples: ['pause'],
-            });
+export default class PauseCommand extends Commando.Command {
+    constructor(client: Commando.CommandoClient) {
+        super(client, {
+            name: 'pause',
+            aliases: ['pa', 'stop'],
+            group: 'music',
+            memberName: 'pause',
+            description: 'Pauses the current song',
+            examples: ['pause'],
+        });
+    }
+
+    async run(msg: Message) {
+        if (!msg.member?.voice.channel) {
+            return msg.lineReply('You need to be in a voice channel lmao');
         }
 
-        async run(msg: Message) {
-            if (!msg.member?.voice.channel) {
-                return msg.lineReply('You need to be in a voice channel lmao');
-            }
+        const queue = getQ(msg.guild.id);
 
-            const queue =
-                queues.get(msg.guild.id) ?? (queues.set(msg.guild.id, new Queue()).get(msg.guild.id) as Queue);
-
-            if (queue.items.length <= 0) {
-                queue.channel = await msg.member.voice.channel.join();
-                
-                queue.channel.on("disconnect", () => {
-                    queues.delete(msg.guild?.id);
-                });
-
-                queue.msgChannel = msg.channel;
-            }
-
-            queue.dispatcher?.pause();
-            return null;
+        if (!queue.dispatcher) {
+            return msg.lineReply('Not even connected bruh');
         }
-    };
+
+        if (queue.items.length <= 0) {
+            return msg.lineReply('Nothing in queue to pause rn tho');
+        }
+
+        queue.dispatcher.pause();
+        return null;
+    }
+}

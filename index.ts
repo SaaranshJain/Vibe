@@ -1,5 +1,5 @@
 import * as Commando from 'discord.js-commando';
-import { Collection } from 'discord.js';
+import { config } from 'dotenv';
 
 // import commands here
 import PlayCommand from './commands/music/play.js';
@@ -12,11 +12,10 @@ import RemoveCommand from './commands/music/remove.js';
 import ExitCommand from './commands/music/exit.js';
 import SaveCommand from './commands/music/save.js';
 import LoadCommand from './commands/music/load.js';
-import SeekCommand from "./commands/music/seek.js";
-
-import { Queue } from './queue-class.js';
+import SeekCommand from './commands/music/seek.js';
 
 // set up env vars
+config();
 const { OWNER, TOKEN, PREFIX } = process.env;
 
 if (!OWNER || !TOKEN || !PREFIX) {
@@ -34,24 +33,22 @@ client.on('ready', () => {
     console.log('The bot is up and running!');
 });
 
-const queues = new Collection<string, Queue>();
-
 // register commands
 client.registry
     .registerGroups([['music', 'music commands']])
     .registerDefaults()
     .registerCommands([
-        PlayCommand(queues),
-        QueueCommand(queues),
-        NextCommand(queues),
-        PreviousCommand(queues),
-        PauseCommand(queues),
-        ResumeCommand(queues),
-        RemoveCommand(queues),
-        ExitCommand(queues),
-        SaveCommand(queues),
-        LoadCommand(queues),
-        SeekCommand(queues)
+        PlayCommand,
+        QueueCommand,
+        NextCommand,
+        PreviousCommand,
+        PauseCommand,
+        ResumeCommand,
+        RemoveCommand,
+        ExitCommand,
+        SaveCommand,
+        LoadCommand,
+        SeekCommand,
     ]);
 
 client.login(TOKEN).catch(err => console.log(err));
