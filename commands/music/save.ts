@@ -12,10 +12,19 @@ export default class SaveCommand extends Commando.Command {
             memberName: 'save',
             description: 'Saves the current queue for re-use',
             examples: ['save'],
+            args: [
+                {
+                    key: 'name',
+                    label: 'name',
+                    prompt: 'Please enter name of the queue',
+                    type: 'string',
+                    infinite: true,
+                },
+            ],
         });
     }
 
-    async run(msg: Message) {
+    async run(msg: Message, { name }: { name: string[] }) {
         if (!msg.member?.voice.channel) {
             return msg.lineReply('You need to be in a voice channel lmao');
         }
@@ -26,24 +35,26 @@ export default class SaveCommand extends Commando.Command {
             return msg.lineReply('Saving empty q??????');
         }
 
+        const qName = name.join(' ');
+
         fs.readFile('./saved-queues.json', { encoding: 'utf-8' }, (err, data: string) => {
             if (err) {
                 console.log(err);
             } else {
-                const existingQueues = JSON.parse(data);
+                const qs = JSON.parse(data);
 
-                existingQueues[msg.author.id]
+                qs[msg.author.id]
                     ? null
-                    : (existingQueues[msg.author.id] = {
-                          [msg.guild.id]: [],
+                    : (qs[msg.author.id] = {
+                          [qName]: [],
                       });
 
-                existingQueues[msg.author.id][msg.guild.id] = queue.items.map((v, i) => {
+                qs[msg.author.id][qName] = queue.items.map((v, i) => {
                     i === 0 ? (v.state = 'playing') : (v.state = 'queued');
                     return v;
                 });
 
-                fs.writeFile('./saved-queues.json', JSON.stringify(existingQueues), { encoding: 'utf-8' }, err => {
+                fs.writeFile('./saved-queues.json', JSON.stringify(qs), { encoding: 'utf-8' }, err => {
                     if (err) console.log(err);
                 });
             }

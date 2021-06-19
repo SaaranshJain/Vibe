@@ -13,7 +13,7 @@ export default class QueueCommand extends Commando.Command {
     constructor(client: Commando.CommandoClient) {
         super(client, {
             name: 'queue',
-            aliases: ['q', 'list'],
+            aliases: ['q', 'qu'],
             group: 'music',
             memberName: 'queue',
             description: 'Displays the current queue',

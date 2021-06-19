@@ -13,6 +13,8 @@ import ExitCommand from './commands/music/exit.js';
 import SaveCommand from './commands/music/save.js';
 import LoadCommand from './commands/music/load.js';
 import SeekCommand from './commands/music/seek.js';
+import ViewCommand from './commands/music/view.js';
+import ShareCommand from './commands/music/share.js';
 
 // set up env vars
 config();
@@ -49,6 +51,8 @@ client.registry
         SaveCommand,
         LoadCommand,
         SeekCommand,
+        ViewCommand,
+        ShareCommand,
     ]);
 
 client.login(TOKEN).catch(err => console.log(err));
