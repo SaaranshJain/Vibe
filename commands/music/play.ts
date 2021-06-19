@@ -63,7 +63,7 @@ export default class PlayCommand extends Commando.Command {
             await msg.channel.send(
                 new MessageEmbed({
                     title: data.title,
-                    thumbnail: { url: data.url },
+                    thumbnail: { url: data.thumbnail },
                     description: 'Added to queue',
                     url: data.url,
                 })
