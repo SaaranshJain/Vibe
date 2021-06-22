@@ -59,7 +59,7 @@ export class Queue implements QueueInterface {
         this.items = [];
     }
 
-    async recalcQueue(time?: number) {
+    async recalcQueue(time?: number, loop?: 'song' | 'queue') {
         if (this.items.length === 0) return;
 
         const firstIndOfQueued = this.items.findIndex(val => val.state === 'queued');
@@ -69,9 +69,14 @@ export class Queue implements QueueInterface {
 
         if (indOfPlaying === -1) {
             if (firstIndOfQueued === -1) {
-                await this.msgChannel.send('Queue is now complete');
-                this.channel.disconnect();
-                return;
+                if (loop !== 'queue') {
+                    await this.msgChannel.send('Queue is now complete');
+                    this.channel.disconnect();
+                    return;
+                }
+
+                await this.msgChannel.send('Queue complete, looping');
+                this.items[0].state = 'playing';
             }
 
             indOfPlaying = firstIndOfQueued;
@@ -100,7 +105,7 @@ export class Queue implements QueueInterface {
         );
 
         this.dispatcher.on('finish', () => {
-            playing.state = 'played';
+            loop === 'song' ? null : (playing.state = 'played');
             this.recalcQueue();
         });
 

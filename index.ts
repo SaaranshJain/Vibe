@@ -15,6 +15,7 @@ import LoadCommand from './commands/music/load.js';
 import SeekCommand from './commands/music/seek.js';
 import ViewCommand from './commands/music/view.js';
 import ShareCommand from './commands/music/share.js';
+import LoopCommand from './commands/music/loop.js';
 
 // set up env vars
 config();
@@ -53,6 +54,7 @@ client.registry
         SeekCommand,
         ViewCommand,
         ShareCommand,
+        LoopCommand
     ]);
 
 client.login(TOKEN).catch(err => console.log(err));
